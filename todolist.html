@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My To Do List</title>
+    <style>
+        body {
+            background-color: pink;
+            font-family: Verdana, Geneva, Tahoma, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .todo-wrapper {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 300px;
+            text-align: center;
+        }
+
+        .todo-wrapper h2 {
+            margin: 0 0 15px;
+        }
+
+        .todo-wrapper p {
+            font-style: italic;
+            color: grey;
+            margin: 5px 0 15px;
+        }
+
+        .todo-wrapper ol {
+            list-style-type: decimal;
+            padding: 0;
+            margin: 20px 0;
+            text-align: left;
+        }
+
+        .todo-wrapper ol li {
+            background: #f9f9f9;
+            margin: 5px 0;
+            padding: 10px;
+            border-radius: 5px;
+            transition: all 0.3s ease-out;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .todo-wrapper form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .todo-wrapper input {
+            padding: 5px;
+            margin-bottom: 10px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .todo-wrapper .pretty-button {
+            margin: 5px 0;
+            color: white;
+            background-color: brown;
+            border-radius: 15px;
+            padding: 5px 20px;
+            border: none;
+            text-align: center;
+            display: inline-block;
+            font-size: small;
+            cursor: pointer;
+            transition: opacity 0.3s ease-out;
+        }
+
+        .todo-wrapper .pretty-button:hover {
+            opacity: 0.7;
+        }
+
+        .timer {
+            font-size: small;
+            color: red;
+            margin-left: 10px;
+        }
+
+        .completed {
+            text-decoration: line-through;
+            color: grey;
+        }
+    </style>
+</head>
+<body>
+    <div class="todo-wrapper">
+        <h2>My To Do List</h2>
+        <p>Klik dua kali untuk membuat list selesai</p>
+        <form id="todo-form">
+            <input type="text" id="todo-input" placeholder="Add a new task">
+            <input type="number" id="reminder-time" placeholder="Reminder in seconds">
+            <button type="submit" class="pretty-button">Add</button>
+            <button type="button" id="clear-button" class="pretty-button">Clear</button>
+            <button type="button" id="empty-button" class="pretty-button">Empty List</button>
+            <button type="button" id="save-button" class="pretty-button">Save List</button>
+        </form>
+        <ol id="todo-list"></ol>
+    </div>
+    <script>
+        // Fungsi untuk menyimpan list ke localStorage
+        function saveList() {
+            const items = [];
+            document.querySelectorAll('#todo-list li').forEach(li => {
+                const text = li.querySelector('.task-text').textContent;
+                const completed = li.classList.contains('completed');
+                items.push({ text, completed });
+            });
+            localStorage.setItem('todoList', JSON.stringify(items));
+        }
+
+        // Fungsi untuk memuat list dari localStorage
+        function loadList() {
+            const items = JSON.parse(localStorage.getItem('todoList')) || [];
+            items.forEach(item => {
+                const li = document.createElement('li');
+                li.innerHTML = `<span class="task-text">${item.text}</span><span class="timer"></span>`;
+                if (item.completed) {
+                    li.classList.add('completed');
+                }
+                document.getElementById('todo-list').appendChild(li);
+            });
+        }
+
+        // Memuat list saat halaman dibuka
+        loadList();
+
+        // untuk form
+        document.getElementById('todo-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const input = document.getElementById('todo-input');
+            const reminderTimeInput = document.getElementById('reminder-time');
+            const newItemText = input.value.trim();
+            const reminderTime = parseInt(reminderTimeInput.value.trim(), 10);
+
+            if (newItemText !== '') {
+                const li = document.createElement('li');
+                li.innerHTML = `<span class="task-text">${newItemText}</span><span class="timer"></span>`;
+                document.getElementById('todo-list').appendChild(li);
+
+                if (!isNaN(reminderTime) && reminderTime > 0) {
+                    const timerSpan = li.querySelector('.timer');
+                    let timeLeft = reminderTime;
+
+                    const countdown = setInterval(() => {
+                        if (timeLeft <= 0) {
+                            clearInterval(countdown);
+                            timerSpan.textContent = '';
+                            li.classList.add('completed');
+                            saveList();
+                            alert(`Reminder: ${newItemText}`);
+                        } else {
+                            timerSpan.textContent = `${timeLeft}s`;
+                            timeLeft--;
+                        }
+                    }, 1000);
+                }
+
+                input.value = '';
+                reminderTimeInput.value = '';
+                saveList();
+            }
+        });
+
+        // Clear input
+        document.getElementById('clear-button').addEventListener('click', function() {
+            document.getElementById('todo-input').value = '';
+            document.getElementById('reminder-time').value = '';
+        });
+
+        // Empty list
+        document.getElementById('empty-button').addEventListener('click', function() {
+            document.getElementById('todo-list').innerHTML = '';
+            saveList();
+        });
+
+        // Save list
+        document.getElementById('save-button').addEventListener('click', function() {
+            saveList();
+            alert('List saved!');
+        });
+
+        // Menandai item sebagai selesai dengan double click
+        document.getElementById('todo-list').addEventListener('dblclick', function(event) {
+            if (event.target.classList.contains('task-text')) {
+                event.target.parentElement.classList.toggle('completed');
+                saveList();
+            }
+        });
+    </script>
+</body>
+</html>
